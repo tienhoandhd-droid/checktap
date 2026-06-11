@@ -1,0 +1,61 @@
+# Tự động build & đăng dashboard lên GitHub Pages.
+# ĐẶT FILE NÀY TẠI: .github/workflows/deploy.yml  (ở GỐC repo)
+# Yêu cầu sau khi thêm:
+#   1) Settings → Pages → Build and deployment → Source = "GitHub Actions"
+#   2) Settings → Secrets and variables → Actions → New repository secret, thêm 2 secret:
+#        VITE_SUPABASE_URL       = https://<project>.supabase.co
+#        VITE_SUPABASE_ANON_KEY  = <anon public key>
+# Lưu ý: package.json phải nằm ở GỐC repo (upload nội dung BÊN TRONG thư mục dashboard, không để nguyên thư mục dashboard).
+
+name: Deploy dashboard to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm install
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
