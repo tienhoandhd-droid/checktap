@@ -7,7 +7,7 @@ import { fmtPct, STATUS } from '../utils/formatters'
 
 const PALETTE = ['#1F5C4D', '#2E8B74', '#6FBFA6', '#B9842B', '#C0563F', '#3E6F8E', '#8E6FB8', '#5E7268']
 
-export default function LotRoundTrendChart({ data, threshold }) {
+export default function LotRoundTrendChart({ data, threshold, warning }) {
   const rows = data || []
   const lots = [...new Set(rows.map((r) => r.lot_id))]
   const maxRound = rows.reduce((m, r) => Math.max(m, Number(r.check_round)), 0)
@@ -45,6 +45,14 @@ export default function LotRoundTrendChart({ data, threshold }) {
               contentStyle={{ borderRadius: 10, border: '1px solid #DCE9E4', fontSize: 12 }}
             />
             {lots.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
+            {warning != null && (
+              <ReferenceLine
+                y={Number(warning)}
+                stroke={STATUS.warn.dot}
+                strokeDasharray="2 4"
+                label={{ value: `Cảnh báo ${fmtPct(warning)}`, position: 'right', fontSize: 10, fill: STATUS.warn.dot }}
+              />
+            )}
             <ReferenceLine
               y={Number(threshold ?? 0.1)}
               stroke={STATUS.alert.dot}

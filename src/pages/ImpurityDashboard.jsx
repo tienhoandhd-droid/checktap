@@ -160,7 +160,7 @@ export default function ImpurityDashboard() {
 
           {/* Biểu đồ chính */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print-grid">
-            <LotRoundTrendChart data={dash.lot_round_trend} threshold={threshold} />
+            <LotRoundTrendChart data={dash.lot_round_trend} threshold={threshold} warning={warning} />
             <ParetoTimeBucketChart data={dash.pareto_kg} />
           </div>
 
