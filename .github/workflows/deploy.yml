@@ -1,10 +1,16 @@
-name: Deploy dashboard len GitHub Pages
+# Tự động build & đăng dashboard lên GitHub Pages.
+# Đặt file này tại: .github/workflows/deploy.yml (ở GỐC repo).
+# Yêu cầu: Settings → Pages → Build and deployment → Source = "GitHub Actions".
+# Và thêm 2 Secret (Settings → Secrets and variables → Actions → New repository secret):
+#   VITE_SUPABASE_URL       = https://<project>.supabase.co
+#   VITE_SUPABASE_ANON_KEY  = <anon public key>
 
-# Tu dong chay khi co thay doi tren nhanh chinh, hoac bam chay tay
+name: Deploy dashboard to GitHub Pages
+
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -19,30 +25,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Lay ma nguon
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cai dat Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Cai dat thu vien
-        run: npm install
+      - name: Install
+        run: npm ci
 
-      - name: Build (Vite) - nap bien Supabase luc build
+      - name: Build
         run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: Chuan bi GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Tai ket qua build (thu muc dist) len Pages
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: dist
 
   deploy:
     needs: build
@@ -51,6 +54,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Trien khai len GitHub Pages
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
