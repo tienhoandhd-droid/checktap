@@ -6,7 +6,7 @@ const SCOPES = [
   { key: 'lot', label: 'Theo lô' },
 ]
 
-export default function ScopeFilters({ value, onChange, lots, products, onRefresh, loading }) {
+export default function ScopeFilters({ value, onChange, lots, products, lines, onRefresh, loading }) {
   const set = (patch) => onChange({ ...value, ...patch })
 
   return (
@@ -57,6 +57,21 @@ export default function ScopeFilters({ value, onChange, lots, products, onRefres
 
       {/* Bộ lọc chi tiết */}
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label className="field-label">Dây chuyền (Line)</label>
+          <select
+            className="field"
+            value={value.lineId || ''}
+            onChange={(e) => set({ lineId: e.target.value || null })}
+          >
+            <option value="">— Tất cả line —</option>
+            {(lines || []).map((l) => (
+              <option key={l.line_id} value={l.line_id}>
+                {l.line_id} · {l.lot_count} lô · {fmtPct(l.rate)}
+              </option>
+            ))}
+          </select>
+        </div>
         {value.scopeType === 'lot' && (
           <div>
             <label className="field-label">Lô</label>

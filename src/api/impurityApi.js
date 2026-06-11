@@ -46,6 +46,13 @@ export async function fetchProductList() {
   return { data: data ?? [], error }
 }
 
+export async function fetchLineList() {
+  const g = guard()
+  if (g) return g
+  const { data, error } = await supabase.rpc('gmp_api_impurity_line_list')
+  return { data: data ?? [], error }
+}
+
 export async function fetchAiLatest(params) {
   const g = guard()
   if (g) return g

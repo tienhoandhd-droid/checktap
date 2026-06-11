@@ -8,26 +8,22 @@ import { fmtInt, fmtPct } from '../utils/formatters'
 // Pareto theo KG: cột = số đơn vị tạp của KG; đường = % luỹ kế.
 // (Trong dữ liệu thực, KG đóng vai trò "khung/mẻ kiểm" thay cho khung giờ.)
 export default function ParetoTimeBucketChart({ data, topN = 15 }) {
-  const rows = [...(data || [])]
+  const allSorted = [...(data || [])]
     .filter((r) => Number(r.impurity_qty) > 0)
     .sort((a, b) => Number(b.impurity_qty) - Number(a.impurity_qty))
-    .slice(0, topN)
-
+  // % luỹ kế tính trên TỔNG TOÀN PHẠM VI (không phải chỉ trong top N)
+  const total = allSorted.reduce((s, r) => s + Number(r.impurity_qty), 0) || 1
   let cum = 0
-  const total = rows.reduce((s, r) => s + Number(r.impurity_qty), 0) || 1
-  const chart = rows.map((r) => {
-    cum += Number(r.impurity_qty)
-    return {
-      kg: r.kg_code,
-      impurity: Number(r.impurity_qty),
-      cum: Math.round((cum / total) * 1000) / 10,
-    }
-  })
+  const cumPct = allSorted.map((r) => { cum += Number(r.impurity_qty); return Math.round((cum / total) * 1000) / 10 })
+  const rows = allSorted.slice(0, topN)
+  const chart = rows.map((r, i) => ({ kg: r.kg_code, impurity: Number(r.impurity_qty), cum: cumPct[i] }))
+  const topShare = rows.length ? cumPct[rows.length - 1] : 0
+  const moreKg = allSorted.length - rows.length
 
   return (
     <ChartCard
       title="Pareto theo khung kiểm (KG)"
-      sub={`Top ${topN} KG đóng góp nhiều tạp nhất, kèm % luỹ kế (quy tắc 80/20).`}
+      sub={`Top ${topN} KG nhiều tạp nhất; % luỹ kế tính trên TOÀN phạm vi${allSorted.length > topN ? ` — top ${topN} ≈ ${topShare}% tổng tạp, còn ${moreKg} KG khác` : ''}.`}
       isEmpty={chart.length === 0}
       emptyHint="Không có tạp trong phạm vi đã chọn."
     >

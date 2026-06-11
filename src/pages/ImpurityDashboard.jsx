@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchDashboard, fetchLotList, fetchProductList, fetchAiLatest } from '../api/impurityApi'
+import { fetchDashboard, fetchLotList, fetchProductList, fetchLineList, fetchAiLatest } from '../api/impurityApi'
 import { supabaseReady } from '../lib/supabaseClient'
 import { overallStatus } from '../utils/trendRules'
 import { fmtInt } from '../utils/formatters'
@@ -10,6 +10,9 @@ import StopRoundVerdict from '../components/StopRoundVerdict'
 import AiTrendAssessment from '../components/AiTrendAssessment'
 import OutlierPanel from '../components/OutlierPanel'
 import LotRoundTrendChart from '../components/LotRoundTrendChart'
+import CumulativeDetectionChart from '../components/CumulativeDetectionChart'
+import InspectorConsistencyPanel from '../components/InspectorConsistencyPanel'
+import HourOfDayChart from '../components/HourOfDayChart'
 import ImpurityHeatmap from '../components/ImpurityHeatmap'
 import ParetoTimeBucketChart from '../components/ParetoTimeBucketChart'
 import ProductTrendChart from '../components/ProductTrendChart'
@@ -56,18 +59,31 @@ VITE_SUPABASE_ANON_KEY=<anon key>`}
 function DataQualityNote({ dq }) {
   if (!dq) return null
   const noTime = Number(dq.rows_no_time || 0)
+  const noDate = Number(dq.rows_no_date || 0)
   const total = Number(dq.rows_total || 0)
-  const errs = Number(dq.error_rows_all || 0)
-  if (noTime === 0 && errs === 0) return null
+  const excluded = Number(dq.rows_excluded_by_date || 0)
+  const errScope = Number(dq.error_rows_in_scope || 0)
+  const errAll = Number(dq.error_rows_all || 0)
+  if (noTime === 0 && noDate === 0 && excluded === 0 && errScope === 0 && errAll === 0) return null
+  const strong = excluded > 0 || errScope > 0 || noDate > 0
   return (
-    <div className="card card-pad no-print border-warn/30">
+    <div className={'card card-pad no-print ' + (strong ? 'border-alert/40' : 'border-warn/30')}>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-body">
-        <span className="font-medium text-warn">Lưu ý chất lượng dữ liệu:</span>
+        <span className={'font-medium ' + (strong ? 'text-alert' : 'text-warn')}>Lưu ý chất lượng dữ liệu:</span>
+        {excluded > 0 && (
+          <span className="tnum text-alert">{fmtInt(excluded)} bản ghi bị loại khỏi phân tích do bộ lọc NGÀY hiện tại.</span>
+        )}
+        {noDate > 0 && (
+          <span className="tnum text-alert">{fmtInt(noDate)}/{fmtInt(total)} bản ghi thiếu ngày kiểm (sẽ bị loại nếu lọc theo ngày).</span>
+        )}
+        {errScope > 0 && (
+          <span className="tnum text-alert">{fmtInt(errScope)} dòng thuộc phạm vi này bị tách sang bảng lỗi (CHƯA nhập — cần xử lý).</span>
+        )}
         {noTime > 0 && (
           <span className="tnum">{fmtInt(noTime)}/{fmtInt(total)} bản ghi không có giờ kiểm (được phép, chỉ để biết).</span>
         )}
-        {errs > 0 && (
-          <span className="tnum">{fmtInt(errs)} dòng bị tách sang bảng lỗi import (không đưa vào phân tích).</span>
+        {errScope === 0 && errAll > 0 && (
+          <span className="tnum text-muted">{fmtInt(errAll)} dòng lỗi import ở các phạm vi khác.</span>
         )}
       </div>
     </div>
@@ -78,16 +94,18 @@ export default function ImpurityDashboard() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [lots, setLots] = useState([])
   const [products, setProducts] = useState([])
+  const [lines, setLines] = useState([])
   const [dash, setDash] = useState(null)
   const [ai, setAi] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // tải danh sách lô + sản phẩm (1 lần)
+  // tải danh sách lô + sản phẩm + dây chuyền (1 lần)
   useEffect(() => {
     if (!supabaseReady) return
     fetchLotList().then(({ data }) => data && setLots(data))
     fetchProductList().then(({ data }) => data && setProducts(data))
+    fetchLineList().then(({ data }) => data && setLines(data))
   }, [])
 
   const load = useCallback(async () => {
@@ -133,6 +151,7 @@ export default function ImpurityDashboard() {
         onChange={setFilters}
         lots={lots}
         products={products}
+        lines={lines}
         onRefresh={load}
         loading={loading}
       />
@@ -158,6 +177,17 @@ export default function ImpurityDashboard() {
             {isLot ? <AiTrendAssessment payload={ai} /> : <OutlierPanel data={dash.outliers} />}
           </div>
 
+          {/* Biểu đồ tích luỹ phát hiện — phục vụ tiêu chí DỪNG KIỂM */}
+          {isLot ? (
+            <CumulativeDetectionChart data={dash.lot_round_trend} />
+          ) : (
+            <CumulativeDetectionChart
+              data={dash.system_trend}
+              title="Tạp mới theo lần & % tích luỹ — gộp theo phạm vi đang chọn"
+              sub="Gộp tất cả lô trong phạm vi: đến lần thứ mấy thì gần như không còn bắt thêm tạp. Cột đỏ = tạp tái xuất hiện."
+            />
+          )}
+
           {/* Biểu đồ chính */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print-grid">
             <LotRoundTrendChart data={dash.lot_round_trend} threshold={threshold} warning={warning} />
@@ -165,6 +195,12 @@ export default function ImpurityDashboard() {
           </div>
 
           <ImpurityHeatmap data={dash.heatmap} lotId={isLot ? filters.lotId : null} />
+
+          {/* Người kiểm (Data Integrity) + giờ kiểm */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 print-grid">
+            <InspectorConsistencyPanel data={dash.by_inspector} threshold={threshold} warning={warning} />
+            <HourOfDayChart data={dash.by_hour} threshold={threshold} warning={warning} />
+          </div>
 
           {/* Theo sản phẩm (hệ thống / sản phẩm) */}
           {!isLot && (

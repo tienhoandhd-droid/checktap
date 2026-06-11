@@ -74,6 +74,8 @@ export default function AiTrendAssessment({ payload }) {
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-3 text-xs" style={{ color: STATUS[status].text }}>
           <span>Tạo lúc {fmtDate(payload.created_at)} · bởi {payload.created_by || 'n8n'}</span>
+          {payload.data_cutoff && <span>· dữ liệu tính đến {fmtDate(payload.data_cutoff)}</span>}
+          {payload.model && <span>· {payload.model}{payload.prompt_version ? ` (${payload.prompt_version})` : ''}</span>}
           {payload.threshold_pct != null && <span className="tnum">Ngưỡng {fmtPct(payload.threshold_pct)}</span>}
           {ai.confidence_level && <span>Độ tin cậy: {ai.confidence_level}</span>}
         </div>

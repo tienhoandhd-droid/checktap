@@ -30,7 +30,7 @@ export default function ProductTrendChart({ data, threshold }) {
   return (
     <ChartCard
       title="Xu hướng tỷ lệ tạp theo sản phẩm (theo lô)"
-      sub="Mỗi điểm là tỷ lệ tạp toàn lô, xếp theo thời gian. Giúp thấy lô nào cao bất thường."
+      sub="Mỗi điểm là tỷ lệ tạp toàn lô, xếp theo thời gian. Khoảng đứt = lô không có sản phẩm đó (không nối liền để tránh hiểu nhầm xu hướng)."
       isEmpty={rows.length === 0}
     >
       <div style={{ height: 280 }}>
@@ -50,7 +50,7 @@ export default function ProductTrendChart({ data, threshold }) {
             {products.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
             <ReferenceLine y={Number(threshold ?? 0.1)} stroke={STATUS.alert.dot} strokeDasharray="5 4" />
             {products.map((p, i) => (
-              <Line key={p} type="monotone" dataKey={p} stroke={PALETTE[i % PALETTE.length]} strokeWidth={2} dot={{ r: 3 }} connectNulls isAnimationActive={false} />
+              <Line key={p} type="monotone" dataKey={p} stroke={PALETTE[i % PALETTE.length]} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} isAnimationActive={false} />
             ))}
           </LineChart>
         </ResponsiveContainer>

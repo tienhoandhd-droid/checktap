@@ -11,23 +11,25 @@ export default function ProductSmallMultiples({ data, threshold, warning }) {
   return (
     <ChartCard
       title="So sánh nhanh giữa các sản phẩm"
-      sub="Mỗi ô là một sản phẩm; mỗi cột là một lô (tỷ lệ tạp toàn lô)."
+      sub="Mỗi ô là một sản phẩm (số % là tỷ lệ chung có trọng số Σtạp÷Σkiểm); mỗi cột là một lô."
       isEmpty={rows.length === 0}
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((p) => {
-          const lots = rows
+          const lotRows = rows
             .filter((r) => r.product_code === p)
             .sort((a, b) => String(a.lot_date).localeCompare(String(b.lot_date)))
-            .map((r) => ({ lot: r.lot_id, rate: Number(r.lot_rate ?? 0) }))
-          const avg =
-            lots.reduce((s, l) => s + l.rate, 0) / (lots.length || 1)
-          const st = rateStatus(avg, threshold, warning)
+          const lots = lotRows.map((r) => ({ lot: r.lot_id, rate: Number(r.lot_rate ?? 0) }))
+          // tỷ lệ chung có TRỌNG SỐ (Σ tạp ÷ Σ kiểm), KHÔNG lấy trung bình các tỷ lệ
+          const sumChk = lotRows.reduce((s, r) => s + Number(r.checked_qty || 0), 0)
+          const sumImp = lotRows.reduce((s, r) => s + Number(r.impurity_qty || 0), 0)
+          const weighted = sumChk > 0 ? (sumImp / sumChk) * 100 : 0
+          const st = rateStatus(weighted, threshold, warning)
           return (
             <div key={p} className="rounded-lg border border-line p-3">
               <div className="flex items-center justify-between">
                 <div className="font-display text-sm font-semibold text-ink">{p}</div>
-                <span className="text-xs tnum" style={{ color: st.dot }}>{fmtPct(avg)}</span>
+                <span className="text-xs tnum" style={{ color: st.dot }}>{fmtPct(weighted)}</span>
               </div>
               <div className="mt-1 text-[11px] text-muted">{lots.length} lô</div>
               <div style={{ height: 70 }} className="mt-1">
