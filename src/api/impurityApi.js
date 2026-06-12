@@ -58,6 +58,7 @@ export async function fetchAiLatest(params) {
   if (g) return g
   const { data, error } = await supabase.rpc('gmp_api_impurity_ai_latest', {
     p_scope_type: params.scopeType,
+    p_scope_value: params.scopeValue ?? null,
     p_lot_id: params.lotId ?? null,
     p_product_code: params.productCode ?? null,
     p_product_family: params.productFamily ?? null,

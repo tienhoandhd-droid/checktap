@@ -116,12 +116,14 @@ export default function ImpurityDashboard() {
       return
     }
     setLoading(true); setError(null)
-    const [{ data, error: e1 }, { data: aiData }] = await Promise.all([
+    // Nhận định AI theo TỪNG dây chuyền: chỉ lấy khi đã chọn line
+    const aiParams = filters.lineId ? { scopeType: 'line', scopeValue: filters.lineId } : null
+    const [{ data, error: e1 }, aiRes] = await Promise.all([
       fetchDashboard(filters),
-      fetchAiLatest(filters),
+      aiParams ? fetchAiLatest(aiParams) : Promise.resolve({ data: null }),
     ])
     if (e1) { setError(e1); setDash(null) }
-    else { setDash(data); setAi(aiData || null) }
+    else { setDash(data); setAi(aiRes?.data || null) }
     setLoading(false)
   }, [filters])
 
@@ -175,10 +177,10 @@ export default function ImpurityDashboard() {
           {isLot ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 print-grid">
               <StopRoundVerdict stop={dash.suggested_stop_round} threshold={threshold} />
-              <AiTrendAssessment payload={ai} />
+              <AiTrendAssessment payload={ai} hint={!filters.lineId ? 'Chọn một dây chuyền (Line) ở bộ lọc phía trên để xem nhận định AI cho dây chuyền đó.' : undefined} />
             </div>
           ) : (
-            <AiTrendAssessment payload={ai} />
+            <AiTrendAssessment payload={ai} hint={!filters.lineId ? 'Chọn một dây chuyền (Line) ở bộ lọc phía trên để xem nhận định AI cho dây chuyền đó.' : undefined} />
           )}
 
           {/* Biểu đồ tích luỹ phát hiện — phục vụ tiêu chí DỪNG KIỂM */}

@@ -40,18 +40,17 @@ function List({ items, tone = 'body' }) {
   )
 }
 
-export default function AiTrendAssessment({ payload }) {
+export default function AiTrendAssessment({ payload, hint }) {
   // payload = kết quả gmp_api_impurity_ai_latest: { found, created_at, ai: {...} } | null
   if (!payload) {
     return (
       <section className="card card-pad rise">
         <div className="flex items-center justify-between">
-          <h3 className="card-title">Nhận định của AI về xu hướng</h3>
+          <h3 className="card-title">Nhận định của AI theo dây chuyền</h3>
           <span className="chip border-line text-muted">Chưa có</span>
         </div>
         <div className="mt-3 rounded-lg bg-mint-50/70 px-3 py-3 text-sm text-muted">
-          Chưa có đánh giá AI cho phạm vi này. Đánh giá được tạo tự động bởi luồng n8n (OpenAI) và lưu lại;
-          chạy luồng hoặc đợi lịch chạy kế tiếp để xem nhận định.
+          {hint || 'Chưa có đánh giá AI cho dây chuyền này. Đánh giá được tạo tự động bởi luồng n8n (OpenAI) theo từng dây chuyền và lưu lại; chạy luồng hoặc đợi lịch chạy kế tiếp để xem nhận định.'}
         </div>
       </section>
     )
@@ -66,7 +65,9 @@ export default function AiTrendAssessment({ payload }) {
     <section className="card overflow-hidden rise">
       <div className="card-pad" style={{ background: STATUS[status].bg, borderBottom: `1px solid ${STATUS[status].border}` }}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="card-title" style={{ color: STATUS[status].text }}>Nhận định của AI về xu hướng</h3>
+          <h3 className="card-title" style={{ color: STATUS[status].text }}>
+            Nhận định của AI{payload.scope_value ? ` — dây chuyền ${payload.scope_value}` : ''}
+          </h3>
           <div className="flex items-center gap-2">
             <StatusChip status={status} />
             <span className="chip border-line bg-white/70 text-muted">Xu hướng: {trend}</span>
