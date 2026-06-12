@@ -26,9 +26,9 @@ export default function KpiCards({ summary, threshold, warning, overall }) {
         <div className="mt-1.5">
           <StatusChip status={overall || st.key} />
         </div>
-        <div className="mt-1 text-[11px] text-muted tnum">Ngưỡng {fmtPct(threshold)}</div>
+        <div className="mt-1 text-[11px] text-muted tnum">Ngưỡng {fmtPct(threshold)} · Σ tạp ÷ cỡ lô</div>
       </div>
-      <Kpi label="Tổng đơn vị kiểm" value={fmtInt(summary.total_checked)} sub={`${fmtInt(summary.total_impurity)} đơn vị tạp`} />
+      <Kpi label="Cỡ lô (SL ban đầu)" value={fmtInt(summary.lot_size)} sub={`${fmtInt(summary.total_impurity)} đơn vị tạp · ${fmtInt(summary.total_checked)} lượt kiểm`} />
       <Kpi label="Số lô" value={fmtInt(summary.lots)} sub={`${fmtInt(summary.products)} sản phẩm`} accent={STATUS.good.text} />
       <Kpi label="Số khung kiểm (KG)" value={fmtInt(summary.kgs)} />
       <Kpi label="Số lần kiểm (tối đa)" value={fmtInt(summary.rounds)} />
