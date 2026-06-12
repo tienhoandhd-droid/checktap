@@ -9,6 +9,11 @@ const SCOPES = [
 export default function ScopeFilters({ value, onChange, lots, products, lines, onRefresh, loading }) {
   const set = (patch) => onChange({ ...value, ...patch })
 
+  // Lọc phân tầng: chọn Line thì chỉ hiện lô/sản phẩm thuộc line đó
+  const inLine = (x) => !value.lineId || x.line_id === value.lineId
+  const filteredLots = (lots || []).filter(inLine)
+  const filteredProducts = (products || []).filter(inLine)
+
   return (
     <div className="card card-pad no-print">
       {/* Tabs phạm vi */}
@@ -62,7 +67,7 @@ export default function ScopeFilters({ value, onChange, lots, products, lines, o
           <select
             className="field"
             value={value.lineId || ''}
-            onChange={(e) => set({ lineId: e.target.value || null })}
+            onChange={(e) => set({ lineId: e.target.value || null, lotId: null, productCode: null })}
           >
             <option value="">— Tất cả line —</option>
             {(lines || []).map((l) => (
@@ -80,8 +85,8 @@ export default function ScopeFilters({ value, onChange, lots, products, lines, o
               value={value.lotId || ''}
               onChange={(e) => set({ lotId: e.target.value || null })}
             >
-              <option value="">— Chọn lô —</option>
-              {lots.map((l) => (
+              <option value="">{value.lineId ? `— Chọn lô (${filteredLots.length}) —` : '— Chọn lô —'}</option>
+              {filteredLots.map((l) => (
                 <option key={l.lot_id} value={l.lot_id}>
                   {l.lot_id} · {l.product_code} · {fmtPct(l.rate)}
                 </option>
@@ -99,7 +104,7 @@ export default function ScopeFilters({ value, onChange, lots, products, lines, o
               onChange={(e) => set({ productCode: e.target.value || null })}
             >
               <option value="">— Tất cả sản phẩm —</option>
-              {products.map((p) => (
+              {filteredProducts.map((p) => (
                 <option key={p.product_code} value={p.product_code}>
                   {p.product_code} · {p.lot_count} lô · {fmtPct(p.rate)}
                 </option>
