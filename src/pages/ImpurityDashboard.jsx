@@ -172,10 +172,14 @@ export default function ImpurityDashboard() {
           <DataQualityNote dq={dash.data_quality} />
 
           {/* Hàng nổi bật: đề xuất số lần kiểm (lô) + nhận định AI */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 print-grid">
-            {isLot ? <StopRoundVerdict stop={dash.suggested_stop_round} threshold={threshold} /> : <AiTrendAssessment payload={ai} />}
-            {isLot ? <AiTrendAssessment payload={ai} /> : <OutlierPanel data={dash.outliers} />}
-          </div>
+          {isLot ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 print-grid">
+              <StopRoundVerdict stop={dash.suggested_stop_round} threshold={threshold} />
+              <AiTrendAssessment payload={ai} />
+            </div>
+          ) : (
+            <AiTrendAssessment payload={ai} />
+          )}
 
           {/* Biểu đồ tích luỹ phát hiện — phục vụ tiêu chí DỪNG KIỂM */}
           {isLot ? (
@@ -217,8 +221,8 @@ export default function ImpurityDashboard() {
             </>
           )}
 
-          {/* Lô: hiện outlier đầy đủ ở dưới (vì hàng trên đã dành cho AI) */}
-          {isLot && <OutlierPanel data={dash.outliers} />}
+          {/* Tín hiệu bất thường cần chú ý — đặt xuống dưới, sau các biểu đồ */}
+          <OutlierPanel data={dash.outliers} />
 
           <DetailTable data={dash.lot_round_trend} threshold={threshold} warning={warning} />
         </div>

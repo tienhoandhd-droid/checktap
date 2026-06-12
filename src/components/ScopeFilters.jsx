@@ -56,7 +56,7 @@ export default function ScopeFilters({ value, onChange, lots, products, lines, o
       </div>
 
       {/* Bộ lọc chi tiết */}
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div>
           <label className="field-label">Dây chuyền (Line)</label>
           <select
@@ -128,7 +128,7 @@ export default function ScopeFilters({ value, onChange, lots, products, lines, o
         </div>
 
         <div>
-          <label className="field-label">Ngưỡng tạp (%) — để trống dùng mặc định</label>
+          <label className="field-label">Ngưỡng (%)</label>
           <input
             type="number"
             step="0.01"
