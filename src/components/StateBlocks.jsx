@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { STATUS } from '../utils/formatters'
 
 export function Loading({ label = 'Đang tải dữ liệu…' }) {
@@ -62,17 +63,29 @@ export function StatusChip({ status, children }) {
 }
 
 // Khung thẻ biểu đồ + xử lý rỗng tại chỗ (không vỡ khi data = [])
-export function ChartCard({ title, sub, children, isEmpty, emptyHint, right }) {
+export function ChartCard({ title, sub, children, isEmpty, emptyHint, right, collapsible, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
     <section className="card card-pad rise">
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <div className={`flex items-start justify-between gap-3 ${collapsible && !open ? '' : 'mb-3'}`}>
         <div>
           <h3 className="card-title">{title}</h3>
-          {sub && <p className="card-sub">{sub}</p>}
+          {sub && (!collapsible || open) && <p className="card-sub">{sub}</p>}
         </div>
-        {right}
+        <div className="flex shrink-0 items-center gap-2">
+          {right}
+          {collapsible && (
+            <button
+              onClick={() => setOpen((o) => !o)}
+              className="chip border-line text-muted hover:text-ink"
+              aria-expanded={open}
+            >
+              {open ? 'Thu gọn ▴' : 'Mở ▾'}
+            </button>
+          )}
+        </div>
       </div>
-      {isEmpty ? (
+      {collapsible && !open ? null : isEmpty ? (
         <div className="flex h-[220px] items-center justify-center rounded-lg bg-mint-50/60 text-sm text-muted">
           {emptyHint || 'Không có dữ liệu trong phạm vi đã chọn.'}
         </div>

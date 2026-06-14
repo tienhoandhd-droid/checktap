@@ -6,7 +6,7 @@ import { fmtPct, fmtInt, rateStatus, STATUS } from '../utils/formatters'
 // Ghi rõ SỐ LƯỢT (khung giờ), SỐ KG, ĐƠN VỊ KIỂM, SỐ TẠP để đọc tỷ lệ đúng bối cảnh:
 // người kiểm ít lượt thì tỷ lệ chỉ mang tính tham khảo (cỡ mẫu nhỏ).
 export default function InspectorConsistencyPanel({ data, threshold, warning }) {
-  const [sortBy, setSortBy] = useState('n') // 'n' = số lượt | 'rate' = tỷ lệ
+  const [sortBy, setSortBy] = useState('rate') // 'rate' = tỷ lệ (mặc định) | 'n' = số lượt
 
   const rows = (data || [])
     .map((r) => ({
@@ -89,7 +89,7 @@ export default function InspectorConsistencyPanel({ data, threshold, warning }) 
         </table>
       </div>
       <p className="mt-2 text-[11px] text-muted">
-        Bấm tiêu đề “Số lượt” hoặc “Tỷ lệ” để đổi cách sắp xếp. Vạch ngưỡng áp dụng: {fmtPct(threshold)}.
+        Sắp xếp mặc định theo <b>tỷ lệ cao → thấp</b>. Bấm tiêu đề “Tỷ lệ” hoặc “Số lượt” để đổi cách sắp xếp. Vạch ngưỡng áp dụng: {fmtPct(threshold)}.
         Người kiểm nhiều lượt mà tỷ lệ lệch hẳn so với phần còn lại mới là tín hiệu đáng soi.
       </p>
     </ChartCard>

@@ -39,6 +39,8 @@ export default function ImpurityHeatmap({ data, lotId }) {
     <ChartCard
       title="Bản đồ nhiệt theo khung kiểm (KG) × lần kiểm"
       sub="Mỗi ô là tỷ lệ tạp của một KG tại một lần kiểm. Màu đậm dần theo mức tạp."
+      collapsible
+      defaultOpen={false}
       isEmpty={rows.length === 0}
       right={
         <div className="flex items-center gap-1 text-[10px] text-muted no-print">

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { fmtDate, fmtPct, STATUS } from '../utils/formatters'
 import { StatusChip } from './StateBlocks'
 
@@ -60,6 +61,8 @@ export default function AiTrendAssessment({ payload, hint }) {
   const status = STATUS_MAP[ai.overall_status] || 'neutral'
   const trend = TREND_LABEL[ai.overall_trend] || ai.overall_trend || '—'
   const validClaim = ai.general_trend_is_valid
+  const [open, setOpen] = useState(false)
+  const riskCount = (ai.high_risk_lots?.length || 0) + (ai.high_risk_products?.length || 0) + (ai.outlier_products?.length || 0)
 
   return (
     <section className="card overflow-hidden rise">
@@ -82,39 +85,60 @@ export default function AiTrendAssessment({ payload, hint }) {
         </div>
       </div>
 
-      <div className="card-pad space-y-4">
-        {typeof validClaim === 'boolean' && (
-          <div
-            className="rounded-lg px-3 py-2 text-sm"
-            style={{
-              background: validClaim ? STATUS.good.bg : STATUS.warn.bg,
-              color: validClaim ? STATUS.good.text : STATUS.warn.text,
-            }}
-          >
-            {validClaim
-              ? 'AI cho rằng kết luận xu hướng chung là HỢP LỆ với dữ liệu hiện có.'
-              : 'AI lưu ý: CHƯA đủ cơ sở để kết luận xu hướng chung — cần thêm dữ liệu/điều tra.'}
+      <div className="card-pad space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm text-body">
+            {validClaim === false
+              ? 'CHƯA đủ cơ sở kết luận xu hướng chung — cần thêm dữ liệu/điều tra.'
+              : typeof validClaim === 'boolean'
+              ? 'Kết luận xu hướng chung được coi là hợp lệ với dữ liệu hiện có.'
+              : 'Nhận định chi tiết bên dưới.'}
+            {ai.suggested_stop_round != null && (
+              <> · Đề xuất dừng ở <b>lần {ai.suggested_stop_round}</b></>
+            )}
+            <span className="text-muted"> · {ai.key_findings?.length || 0} phát hiện · {riskCount} điểm rủi ro</span>
+          </div>
+          <button onClick={() => setOpen((o) => !o)} className="chip border-line text-muted hover:text-ink shrink-0">
+            {open ? 'Thu gọn ▴' : 'Xem chi tiết ▾'}
+          </button>
+        </div>
+
+        {open && (
+          <div className="space-y-4 pt-1">
+            {typeof validClaim === 'boolean' && (
+              <div
+                className="rounded-lg px-3 py-2 text-sm"
+                style={{
+                  background: validClaim ? STATUS.good.bg : STATUS.warn.bg,
+                  color: validClaim ? STATUS.good.text : STATUS.warn.text,
+                }}
+              >
+                {validClaim
+                  ? 'AI cho rằng kết luận xu hướng chung là HỢP LỆ với dữ liệu hiện có.'
+                  : 'AI lưu ý: CHƯA đủ cơ sở để kết luận xu hướng chung — cần thêm dữ liệu/điều tra.'}
+              </div>
+            )}
+
+            <Section title="Phát hiện chính"><List items={ai.key_findings} /></Section>
+            <Section title="Bằng chứng (trích từ dữ liệu)"><List items={ai.supporting_evidence} /></Section>
+
+            {(ai.high_risk_lots?.length || ai.high_risk_products?.length || ai.outlier_products?.length) ? (
+              <Section title="Điểm rủi ro / bất thường">
+                <List items={[...(ai.high_risk_lots || []), ...(ai.high_risk_products || []), ...(ai.outlier_products || [])]} tone="alert" />
+              </Section>
+            ) : null}
+
+            <Section title="Khuyến nghị hành động"><List items={ai.recommended_actions} /></Section>
+
+            {ai.limitations?.length ? (
+              <Section title="Giới hạn của nhận định">
+                <div className="rounded-lg bg-mint-50/70 px-3 py-2">
+                  <List items={ai.limitations} />
+                </div>
+              </Section>
+            ) : null}
           </div>
         )}
-
-        <Section title="Phát hiện chính"><List items={ai.key_findings} /></Section>
-        <Section title="Bằng chứng (trích từ dữ liệu)"><List items={ai.supporting_evidence} /></Section>
-
-        {(ai.high_risk_lots?.length || ai.high_risk_products?.length || ai.outlier_products?.length) ? (
-          <Section title="Điểm rủi ro / bất thường">
-            <List items={[...(ai.high_risk_lots || []), ...(ai.high_risk_products || []), ...(ai.outlier_products || [])]} tone="alert" />
-          </Section>
-        ) : null}
-
-        <Section title="Khuyến nghị hành động"><List items={ai.recommended_actions} /></Section>
-
-        {ai.limitations?.length ? (
-          <Section title="Giới hạn của nhận định">
-            <div className="rounded-lg bg-mint-50/70 px-3 py-2">
-              <List items={ai.limitations} />
-            </div>
-          </Section>
-        ) : null}
 
         <div className="rounded-lg bg-mint-50 px-3 py-2 text-xs text-pine">
           {ai.qa_note ||
