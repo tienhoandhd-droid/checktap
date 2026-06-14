@@ -21,6 +21,9 @@ import ProductTimeHeatmap from '../components/ProductTimeHeatmap'
 import ProductParetoChart from '../components/ProductParetoChart'
 import LineParetoChart from '../components/LineParetoChart'
 import DetailTable from '../components/DetailTable'
+import RiskMapTab from '../components/RiskMapTab'
+import TechnicalTrendTab from '../components/TechnicalTrendTab'
+import DataReliabilityTab from '../components/DataReliabilityTab'
 import { Loading, ErrorBlock, Empty } from '../components/StateBlocks'
 
 const DEFAULT_FILTERS = {
@@ -99,6 +102,7 @@ export default function ImpurityDashboard() {
   const [ai, setAi] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [activeTab, setActiveTab] = useState('analysis')
 
   // tải danh sách lô + sản phẩm + dây chuyền (1 lần)
   useEffect(() => {
@@ -173,6 +177,36 @@ export default function ImpurityDashboard() {
           <KpiCards summary={dash.summary} threshold={threshold} warning={warning} overall={overall} />
           <DataQualityNote dq={dash.data_quality} />
 
+          {/* Tab navigation */}
+          <div className="flex gap-1 rounded-xl bg-page p-1 no-print">
+            {[
+              { key: 'analysis', label: 'Phân tích' },
+              { key: 'risk', label: 'Bản đồ rủi ro' },
+              { key: 'trend', label: 'Xu hướng kỹ thuật' },
+              { key: 'reliability', label: 'Độ tin cậy' },
+            ].map(t => (
+              <button key={t.key} onClick={() => setActiveTab(t.key)}
+                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors
+                  ${activeTab === t.key
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-muted hover:text-body'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab: Bản đồ rủi ro */}
+          {activeTab === 'risk' && <RiskMapTab filters={filters} />}
+
+          {/* Tab: Xu hướng kỹ thuật */}
+          {activeTab === 'trend' && <TechnicalTrendTab filters={filters} />}
+
+          {/* Tab: Độ tin cậy */}
+          {activeTab === 'reliability' && <DataReliabilityTab filters={filters} dashDq={dash.data_quality} />}
+
+          {/* Tab: Phân tích (nội dung gốc) */}
+          {activeTab === 'analysis' && <>
+
           {/* Hàng nổi bật: đề xuất số lần kiểm (lô) + nhận định AI */}
           {isLot ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 print-grid">
@@ -227,6 +261,8 @@ export default function ImpurityDashboard() {
           <OutlierPanel data={dash.outliers} />
 
           <DetailTable data={dash.lot_round_trend} threshold={threshold} warning={warning} />
+
+          </>}
         </div>
       )}
     </Shell>
