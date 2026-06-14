@@ -21,9 +21,6 @@ import ProductTimeHeatmap from '../components/ProductTimeHeatmap'
 import ProductParetoChart from '../components/ProductParetoChart'
 import LineParetoChart from '../components/LineParetoChart'
 import DetailTable from '../components/DetailTable'
-import RiskMapTab from '../components/RiskMapTab'
-import TechnicalTrendTab from '../components/TechnicalTrendTab'
-import DataReliabilityTab from '../components/DataReliabilityTab'
 import { Loading, ErrorBlock, Empty } from '../components/StateBlocks'
 
 const DEFAULT_FILTERS = {
@@ -60,6 +57,7 @@ VITE_SUPABASE_ANON_KEY=<anon key>`}
 }
 
 function DataQualityNote({ dq }) {
+  const [open, setOpen] = useState(false)
   if (!dq) return null
   const noTime = Number(dq.rows_no_time || 0)
   const noDate = Number(dq.rows_no_date || 0)
@@ -67,8 +65,11 @@ function DataQualityNote({ dq }) {
   const excluded = Number(dq.rows_excluded_by_date || 0)
   const errScope = Number(dq.error_rows_in_scope || 0)
   const errAll = Number(dq.error_rows_all || 0)
+  const lotsNoDate = dq.lots_no_date || []
+  const errorDetails = dq.error_details || []
   if (noTime === 0 && noDate === 0 && excluded === 0 && errScope === 0 && errAll === 0) return null
   const strong = excluded > 0 || errScope > 0 || noDate > 0
+  const hasDetail = lotsNoDate.length > 0 || errorDetails.length > 0
   return (
     <div className={'card card-pad no-print ' + (strong ? 'border-alert/40' : 'border-warn/30')}>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-body">
@@ -88,7 +89,53 @@ function DataQualityNote({ dq }) {
         {errScope === 0 && errAll > 0 && (
           <span className="tnum text-muted">{fmtInt(errAll)} dòng lỗi import ở các phạm vi khác.</span>
         )}
+        {hasDetail && (
+          <button onClick={() => setOpen((o) => !o)} className="chip border-line text-muted hover:text-ink text-xs ml-auto shrink-0">
+            {open ? 'Ẩn chi tiết ▴' : 'Xem chi tiết ▾'}
+          </button>
+        )}
       </div>
+      {open && hasDetail && (
+        <div className="mt-3 space-y-3 text-xs">
+          {lotsNoDate.length > 0 && (
+            <div>
+              <p className="font-semibold text-alert mb-1">Lô thiếu ngày kiểm:</p>
+              <div className="flex flex-wrap gap-2">
+                {lotsNoDate.map((d, i) => (
+                  <span key={i} className="rounded bg-red-50 px-2 py-0.5 tnum">
+                    {d.lot_id} <span className="text-muted">({d.count} dòng)</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {errorDetails.length > 0 && (
+            <div>
+              <p className="font-semibold text-alert mb-1">Dòng lỗi import (chưa nhập):</p>
+              <table className="w-full border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-line text-left text-muted">
+                    <th className="px-2 py-1">Lô</th>
+                    <th className="px-2 py-1">KG</th>
+                    <th className="px-2 py-1">Lần</th>
+                    <th className="px-2 py-1">Lý do lỗi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {errorDetails.map((e, i) => (
+                    <tr key={i} className="border-b border-line/50">
+                      <td className="px-2 py-1 tnum">{e.lot_id || '—'}</td>
+                      <td className="px-2 py-1">{e.kg_code || '—'}</td>
+                      <td className="px-2 py-1 tnum">{e.round || '—'}</td>
+                      <td className="px-2 py-1 text-alert">{e.reason || '(không rõ)'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -102,7 +149,6 @@ export default function ImpurityDashboard() {
   const [ai, setAi] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [activeTab, setActiveTab] = useState('analysis')
 
   // tải danh sách lô + sản phẩm + dây chuyền (1 lần)
   useEffect(() => {
@@ -177,36 +223,6 @@ export default function ImpurityDashboard() {
           <KpiCards summary={dash.summary} threshold={threshold} warning={warning} overall={overall} />
           <DataQualityNote dq={dash.data_quality} />
 
-          {/* Tab navigation */}
-          <div className="flex gap-1 rounded-xl bg-page p-1 no-print">
-            {[
-              { key: 'analysis', label: 'Phân tích' },
-              { key: 'risk', label: 'Bản đồ rủi ro' },
-              { key: 'trend', label: 'Xu hướng kỹ thuật' },
-              { key: 'reliability', label: 'Độ tin cậy' },
-            ].map(t => (
-              <button key={t.key} onClick={() => setActiveTab(t.key)}
-                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors
-                  ${activeTab === t.key
-                    ? 'bg-surface text-ink shadow-sm'
-                    : 'text-muted hover:text-body'}`}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab: Bản đồ rủi ro */}
-          {activeTab === 'risk' && <RiskMapTab filters={filters} />}
-
-          {/* Tab: Xu hướng kỹ thuật */}
-          {activeTab === 'trend' && <TechnicalTrendTab filters={filters} />}
-
-          {/* Tab: Độ tin cậy */}
-          {activeTab === 'reliability' && <DataReliabilityTab filters={filters} dashDq={dash.data_quality} />}
-
-          {/* Tab: Phân tích (nội dung gốc) */}
-          {activeTab === 'analysis' && <>
-
           {/* Hàng nổi bật: đề xuất số lần kiểm (lô) + nhận định AI */}
           {isLot ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 print-grid">
@@ -261,8 +277,6 @@ export default function ImpurityDashboard() {
           <OutlierPanel data={dash.outliers} />
 
           <DetailTable data={dash.lot_round_trend} threshold={threshold} warning={warning} />
-
-          </>}
         </div>
       )}
     </Shell>

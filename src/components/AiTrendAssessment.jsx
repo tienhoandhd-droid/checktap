@@ -26,6 +26,25 @@ function Section({ title, children }) {
   )
 }
 
+function fmtItem(t) {
+  if (typeof t === 'string') return t
+  if (t && typeof t === 'object') {
+    // Outlier object: { rate, lot_id, kg_code, check_round, note, signal, ... }
+    if (t.note) return t.note  // human-readable note from outliers view
+    if (t.lot_id && t.rate != null) {
+      const parts = [`Lô ${t.lot_id}`]
+      if (t.kg_code) parts.push(`KG ${t.kg_code}`)
+      if (t.check_round) parts.push(`lần ${t.check_round}`)
+      parts.push(`tỷ lệ ${Number(t.rate).toFixed(2)}%`)
+      if (t.signal) parts.push(`(${t.signal})`)
+      return parts.join(' · ')
+    }
+    if (t.suggested_action) return t.suggested_action
+    return JSON.stringify(t)
+  }
+  return String(t)
+}
+
 function List({ items, tone = 'body' }) {
   if (!items || items.length === 0) return null
   const color = tone === 'alert' ? STATUS.alert.text : tone === 'good' ? STATUS.good.text : '#33433E'
@@ -34,7 +53,7 @@ function List({ items, tone = 'body' }) {
       {items.map((t, i) => (
         <li key={i} className="flex gap-2 text-sm" style={{ color }}>
           <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
-          <span>{typeof t === 'string' ? t : JSON.stringify(t)}</span>
+          <span>{fmtItem(t)}</span>
         </li>
       ))}
     </ul>
